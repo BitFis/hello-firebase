@@ -3,6 +3,7 @@
 Just another test project integrating firebase to the app
 
 Project requirements:
+
 - [Angular CLI](https://github.com/angular/angular-cli) - `18.0.7`
 - Node.js (^22): https://nodejs.org/en/
 - [PNPM](https://pnpm.io/)
