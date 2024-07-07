@@ -1,1 +1,10 @@
+@for (alert of alerts; track alert) {
+	<ngb-alert [type]="alert.type" (closed)="close(alert)">
+    <h4 class="alert-heading">{{ alert.message }}</h4>
+    <p>
+      {{ alert?.details }}
+    </p>
+  </ngb-alert>
+}
+
 <router-outlet></router-outlet>

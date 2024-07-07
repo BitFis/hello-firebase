@@ -31,7 +31,8 @@ export class AuthService {
     this.isAuthenticated$.next(true);
   }
 
-  login(): void {
+  async login(user: string, password: string): Promise<void> {
+    await this._auth.login(user, password);
     this.isAuthenticated$.next(true);
   }
 
