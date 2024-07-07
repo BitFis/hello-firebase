@@ -33,7 +33,7 @@ jobs:
         run: pnpm lint
 
       - name: Install dependencies
-        run: pnpm build
+        run: pnpm build --base-href=https://bitfis.github.io/hello-firebase/
 
       - name: List Files in Distribution Directory
         run: ls -R ./dist
