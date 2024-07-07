@@ -1,6 +1,39 @@
 <div class="container">
-  <h1>
-    Hello World
-    <button (click)="logout()" class="btn btn-primary">Logout</button>
-  </h1>
+  <div class="px-4 pt-5 my-5 border-bottom">
+    <h1 class="display-4 fw-bold">Hello {{ $user.getValue()?.displayName }}</h1>
+    <div class="col-lg-6 mx-auto">
+      <p class="lead mb-4">You are successfully logged in.</p>
+
+      <table class="table">
+        <tbody>
+          <tr>
+            <th scope="row">uid</th>
+            <td>{{ $user.getValue()?.uid }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Email</th>
+            <td>{{ $user.getValue()?.email }}</td>
+          </tr>
+          <tr>
+            <th scope="row">PhoneNumber</th>
+            <td>{{ $user.getValue()?.phoneNumber }}</td>
+          </tr>
+          <tr>
+            <th scope="row">providerId</th>
+            <td>{{ $user.getValue()?.providerId }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mb-5">
+        <button
+          type="button"
+          class="btn btn-primary btn-lg px-4 me-sm-3"
+          (click)="logout()"
+        >
+          Log out
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

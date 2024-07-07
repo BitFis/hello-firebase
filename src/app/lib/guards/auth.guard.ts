@@ -2,9 +2,9 @@ import { inject } from '@angular/core';
 import { CanMatchFn, Route, Router, UrlSegment } from '@angular/router';
 import { AuthService } from '@lib/services';
 
-type AuthGuardOptions = {
+interface AuthGuardOptions {
   requiresAuthentication: boolean;
-};
+}
 
 const defaultAuthGuardOptions = (): AuthGuardOptions => ({
   requiresAuthentication: true,
