@@ -38,6 +38,10 @@ jobs:
       - name: List Files in Distribution Directory
         run: ls -R ./dist
 
+      - name: Create 404.html page
+        run: |
+          cp "./dist/welcome-firebase/browser/index.html" "./dist/welcome-firebase/browser/404.html"
+
       - name: Setup Pages
         if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v3
