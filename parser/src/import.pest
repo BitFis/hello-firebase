@@ -1,0 +1,41 @@
+WS = _{ ( " " | "\n" )* }
+
+file_name = {
+	( !( "\"" | "'" ) ~ ANY )+
+}
+
+variable_def = _{
+   ( 'a'..'z' | 'A'..'Z' | "_" | '0'..'9' )+
+}
+
+name = {
+   variable_def
+}
+
+output = {
+	variable_def
+}
+
+variable = {
+	name ~ (" as " ~ output)?
+}
+
+from = {
+  "from"
+}
+
+import_block = {
+ 	"import" ~ WS ~ "{"
+    	~ ( variable | !"}" ~ ANY )+ ~ "}" ~ WS
+    	~ from ~ WS
+      ~ ( "\"" | "'" ) ~ file_name ~ ( "\"" | "'" )
+      ~ WS ~ ";"
+}
+
+match_any = {
+	ANY
+}
+
+main = {
+  SOI ~ ( import_block | match_any )+ ~ EOI
+}
