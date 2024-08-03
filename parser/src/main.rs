@@ -7,7 +7,7 @@ mod parser;
 #[command(version, about, long_about = None)]
 struct Args {
     /// JS file to convert from {} import ... to const {} = await import(...)
-    file: String
+    file: String,
 }
 
 fn main() -> std::io::Result<()> {
@@ -16,7 +16,7 @@ fn main() -> std::io::Result<()> {
 
     // let contents = fs::read_to_string(args.file.clone())
     //     .expect("Provided file can not be read");
-//
+    //
     // let _ = fs::write(args.file.clone(), parser::parse(contents));
 
     parser::parse(args.file.clone())?;

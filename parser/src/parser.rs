@@ -1,27 +1,35 @@
-use std::fs;
-use pest::iterators::Pairs;
+use pest::iterators::{Pair, Pairs};
 use pest::Parser;
 use regex::Regex;
+use std::fs;
 
 #[derive(pest_derive::Parser)]
 #[grammar = "import.pest"] // relative to src
 struct ImportParser;
 
 pub fn parse(file: String) -> std::io::Result<()> {
-    let contents = fs::read_to_string(file.clone())
-        .expect("Provided file can not be read");
+    let contents = fs::read_to_string(file.clone()).expect("Provided file can not be read");
 
     fs::write(file, parse_content(contents))?;
     Ok(())
 }
 
+fn get_file(pair: Pair<Rule>) -> String {
+    let mut output = String::from("(`");
+    output.push_str(pair.as_str());
+    output.push_str("${importquery}`)");
+    return output;
+}
+
 fn convert_import(parse: Pairs<'_, Rule>) -> String {
-    let mut output = String::from("const {");
+    let mut output = String::from("await import");
 
     for pair in parse {
         match pair.as_rule() {
+            Rule::start_variable => {
+                output = String::from("const {");
+            }
             Rule::variable => {
-
                 let inner: Vec<_> = pair.into_inner().collect();
 
                 let impvar = inner[0].as_str();
@@ -35,13 +43,14 @@ fn convert_import(parse: Pairs<'_, Rule>) -> String {
                 output.push_str(impvar);
                 output.push(',');
             }
+            Rule::end_variable => {
+                output.push_str("} = ");
+            }
             Rule::from => {
-                output.push_str("} = await import");
+                output.push_str("await import");
             }
             Rule::file_name => {
-                output.push_str("(`");
-                output.push_str(pair.as_str());
-                output.push_str("${importquery}`)");
+                output.push_str(&get_file(pair));
             }
             _ => {
                 println!("unprocessed {}", pair.as_str())
@@ -67,6 +76,17 @@ fn parse_content(content: String) -> String {
             Rule::import_block => {
                 output.push_str(&convert_import(pair.into_inner()));
             }
+            Rule::inline_import => {
+                for inner_pair in pair.into_inner() {
+                    match inner_pair.as_rule() {
+                        Rule::file_name => {
+                            output.push_str("import");
+                            output.push_str(&get_file(inner_pair));
+                        }
+                        _ => {}
+                    }
+                }
+            }
             _ => {
                 output.push_str(pair.as_str());
             }
@@ -87,17 +107,21 @@ mod tests {
 
     #[test]
     fn parse_simple_content_replace() {
-        let input = String::from("
+        let input = String::from(
+            "
         import {
             __async
         } from \"./chunk-H3KQGMCP.js\";
         var well = true;
-        ");
-        let expect = String::from("
+        ",
+        );
+        let expect = String::from(
+            "
         const {
             __async: __async,
         } = await import(`./chunk-H3KQGMCP.js${importquery}`);
-        var well = true;");
+        var well = true;",
+        );
         assert_eq!(trim(parse_content(input)), trim(expect));
     }
 
@@ -106,13 +130,90 @@ mod tests {
         let input = String::from("
         import{a as It,b as wt}from'./chunk-2RG4V45Z.js';var sr=null;var ir=1,fi=Symbol(\"SIGNAL\");function
         ");
-        let expect = String::from("
+        let expect = String::from(
+            "
         const {
             It: a,
             wt: b,
         } = await import(`./chunk-2RG4V45Z.js${importquery}`);
-        var sr=null;var ir=1,fi=Symbol(\"SIGNAL\");function");
+        var sr=null;var ir=1,fi=Symbol(\"SIGNAL\");function",
+        );
         assert_eq!(trim(parse_content(input)), trim(expect));
+    }
+
+    #[test]
+    fn parser_import_special_characters() {
+        let input = String::from(
+            "
+        import {ɵɵelementEnd} from \"./chunk-H3KQGMCP.js\";
+        ",
+        );
+        let expect = String::from(
+            "
+        const {
+            ɵɵelementEnd: ɵɵelementEnd,
+        } = await import(`./chunk-H3KQGMCP.js${importquery}`);
+        ",
+        );
+        assert_eq!(trim(parse_content(input)), trim(expect));
+    }
+
+    #[test]
+    fn parser_import_only() {
+        let input = String::from(
+            "
+        import \"./chunk-H3KQGMCP.js\";
+        ",
+        );
+        let expect = String::from(
+            "
+        await import(`./chunk-H3KQGMCP.js${importquery}`);
+        ",
+        );
+        assert_eq!(trim(parse_content(input)), trim(expect));
+    }
+
+    #[test]
+    fn parser_import_inline() {
+        let input = String::from(
+            "
+        await import (\"./chunk-H3KQGMCP.js\");
+        ",
+        );
+        let expect = String::from(
+            "
+        await import(`./chunk-H3KQGMCP.js${importquery}`);
+        ",
+        );
+        assert_eq!(trim(parse_content(input)), trim(expect));
+    }
+
+    #[test]
+    fn parser_import_inline_yield() {
+        let input = String::from(
+            "
+    return (yield import(\"./chunk-Q6UJZ2PE.js\")).routes;
+            ",
+        );
+        let expect = String::from(
+            "
+    return (yield import(`./chunk-Q6UJZ2PE.js${importquery}`)).routes;
+        ",
+        );
+        assert_eq!(trim(parse_content(input)), trim(expect));
+    }
+
+    #[test]
+    fn parse_ignore_string_import() {
+        let input = String::from(
+            "
+        sage += `Alternatively,
+        compiler with
+        'import(\"@angular/compiler\");' before boo',
+        `
+        ",
+        );
+        assert_eq!(trim(parse_content(input.clone())), trim(input));
     }
 
     #[test]

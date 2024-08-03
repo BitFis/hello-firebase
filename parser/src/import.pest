@@ -1,11 +1,20 @@
+main = {
+  SOI ~ ( ignore_string | import_block | inline_import | match_any )+ ~ EOI
+}
+
 WS = _{ ( " " | "\n" )* }
+STR = _{ ( "\"" | "'" ) }
 
 file_name = {
-	( !( "\"" | "'" ) ~ ANY )+
+    ( !( "\"" | "'" ) ~ ANY )+
+}
+
+varlist = _{
+    ( "\n" | "\r" | " " | "," )
 }
 
 variable_def = _{
-   ( 'a'..'z' | 'A'..'Z' | "_" | '0'..'9' )+
+   ( !( "\n" | "\r" | " " | "," | "}" ) ~ ANY )+
 }
 
 name = {
@@ -13,29 +22,59 @@ name = {
 }
 
 output = {
-	variable_def
+    variable_def
 }
 
 variable = {
-	name ~ (" as " ~ output)?
+    name+ ~ ( " "+ ~ "as" ~ " "+ ~ output )? ~ varlist*
 }
 
 from = {
   "from"
 }
 
+start_variable = {
+    "{"
+}
+
+end_variable = {
+    "}"
+}
+
 import_block = {
- 	"import" ~ WS ~ "{"
-    	~ ( variable | !"}" ~ ANY )+ ~ "}" ~ WS
-    	~ from ~ WS
-      ~ ( "\"" | "'" ) ~ file_name ~ ( "\"" | "'" )
+      "await"? ~ WS ~ "import" ~ WS ~
+      ( start_variable ~ varlist* ~ variable* ~ end_variable ~ WS ~ from )?
+      ~ WS
+      ~ ( "(" ~ WS )?
+      ~ STR ~ file_name ~ STR
+      ~ ( WS ~ ")")?
       ~ WS ~ ";"
 }
 
-match_any = {
-	ANY
+inline_import = {
+    "import" ~ WS
+        ~ "(" ~ WS
+        ~ STR ~ file_name ~ STR
+        ~ WS
+        ~ ")" ~ WS
 }
 
-main = {
-  SOI ~ ( import_block | match_any )+ ~ EOI
+ignore_string_1 = _{
+	"`" ~ ( !"`" ~ ANY )* ~ "`"
+}
+
+ignore_string_2 = _{
+	"\"" ~ ( !"\"" ~ ANY )* ~ "\""
+}
+
+ignore_string_3 = _{
+	"'" ~ ( !"'" ~ ANY )* ~ "'"
+}
+
+ignore_string = {
+	( ignore_string_1 | ignore_string_2 | ignore_string_3 )
+}
+
+match_any = {
+    ANY
 }
