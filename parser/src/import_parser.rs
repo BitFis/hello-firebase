@@ -1,10 +1,9 @@
 use pest::iterators::{Pair, Pairs};
 use pest::Parser;
-use regex::Regex;
 use std::fs;
 
 #[derive(pest_derive::Parser)]
-#[grammar = "import.pest"] // relative to src
+#[grammar = "import.pest"]
 struct ImportParser;
 
 pub fn parse(file: String) -> std::io::Result<()> {
@@ -38,9 +37,9 @@ fn convert_import(parse: Pairs<'_, Rule>) -> String {
                     defvar = inner[1].as_str();
                 }
 
-                output.push_str(defvar);
-                output.push_str(": ");
                 output.push_str(impvar);
+                output.push_str(": ");
+                output.push_str(defvar);
                 output.push(',');
             }
             Rule::end_variable => {
@@ -99,6 +98,7 @@ fn parse_content(content: String) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use regex::Regex;
 
     fn trim(content: String) -> String {
         let re = Regex::new(r"(  +|\n)").unwrap();
@@ -133,8 +133,8 @@ mod tests {
         let expect = String::from(
             "
         const {
-            It: a,
-            wt: b,
+            a: It,
+            b: wt,
         } = await import(`./chunk-2RG4V45Z.js${importquery}`);
         var sr=null;var ir=1,fi=Symbol(\"SIGNAL\");function",
         );

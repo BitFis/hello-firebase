@@ -1,0 +1,34 @@
+main = {
+  SOI ~ ( script | noscript | link | match_any )+ ~ EOI
+}
+
+WS = _{ ( " " | "\n" )* }
+STR = _{ ( "\"" ) }
+
+value = {
+    ( !STR ~ ANY )+
+}
+
+tag = {
+    ( !( "=" | " " ) ~ ANY )+
+}
+
+attributes = _{
+     ( !">" ~ WS ~ tag ~ ( "=" ~ STR ~ value ~ STR )? ~ WS ~ "/"? )+
+}
+
+script = {
+    "<script" ~ attributes ~ ">" ~ WS ~ "</script>"
+}
+
+noscript = {
+    "<noscript>" ~ ( !"</noscript>" ~ ANY )+
+}
+
+link = {
+    "<link" ~ attributes ~ ">"
+}
+
+match_any = {
+    ANY
+}
