@@ -27,8 +27,15 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.css"],
-            "scripts": []
+            "styles": [
+              "src/styles.css"
+            ],
+            "scripts": [
+              {
+                "inject": false,
+                "input": "./parser/src/assets/load.js"
+              }
+            ]
           },
           "configurations": {
             "production": {
