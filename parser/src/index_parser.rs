@@ -2,15 +2,22 @@ use pest::iterators::Pair;
 use pest::Parser;
 use regex::Regex;
 use std::fs;
+use std::vec::Vec;
 
 #[derive(pest_derive::Parser)]
 #[grammar = "index.pest"]
 struct IndexParser;
 
-pub fn parse(file: String) -> std::io::Result<()> {
+pub fn parse(file: String, scripts: Vec<String>) -> std::io::Result<()> {
     let contents = fs::read_to_string(file.clone()).expect("Provided file can not be read");
 
-    fs::write(file, parse_content(contents))?;
+    let mut inject: Vec<String> = Vec::new();
+    for script in scripts {
+        let con = fs::read_to_string(script)?;
+        inject.push(con);
+    }
+
+    fs::write(file, parse_content(contents, inject))?;
     Ok(())
 }
 
@@ -69,7 +76,10 @@ fn parse_script(tag: &str, parse: Pair<Rule>) -> String {
     return output;
 }
 
-fn parse_content(content: String) -> String {
+const SCRIPT_TAG_START: &str = "<script type=\"text/javascript\">";
+const SCRIPT_TAG_END: &str = "</script>";
+
+fn parse_content(content: String, inject_scripts: Vec<String>) -> String {
     let parse = IndexParser::parse(Rule::main, &content)
         .unwrap_or_else(|e| panic!("{}", e))
         .next()
@@ -81,6 +91,18 @@ fn parse_content(content: String) -> String {
         match pair.as_rule() {
             Rule::script => {
                 output.push_str(&parse_script("script", pair));
+            }
+            Rule::head => {
+                output.push_str(pair.as_str());
+                if inject_scripts.len() > 0 {
+                    output.push_str(SCRIPT_TAG_START);
+                    output.push_str(
+                        inject_scripts
+                            .join(format!("{}{}", SCRIPT_TAG_END, SCRIPT_TAG_START).as_str())
+                            .as_str(),
+                    );
+                    output.push_str(SCRIPT_TAG_END);
+                }
             }
             Rule::link => {
                 output.push_str(&parse_script("link", pair));
@@ -123,7 +145,7 @@ mod tests {
 </body>
         "#,
         );
-        assert_eq!(trim(parse_content(input)), trim(expect));
+        assert_eq!(trim(parse_content(input, Vec::new())), trim(expect));
     }
 
     #[test]
@@ -152,7 +174,7 @@ mod tests {
 </body>
         "#,
         );
-        assert_eq!(trim(parse_content(input)), trim(expect));
+        assert_eq!(trim(parse_content(input, Vec::new())), trim(expect));
     }
 
     #[test]
@@ -173,7 +195,7 @@ mod tests {
 </body>
         "#,
         );
-        assert_eq!(trim(parse_content(input)), trim(expect));
+        assert_eq!(trim(parse_content(input, Vec::new())), trim(expect));
     }
 
     #[test]
@@ -186,6 +208,34 @@ mod tests {
 </head>
         "#,
         );
-        assert_eq!(trim(parse_content(input.clone())), trim(input));
+        assert_eq!(trim(parse_content(input.clone(), Vec::new())), trim(input));
+    }
+
+    #[test]
+    fn append_custom_script() {
+        let input = String::from(
+            r#"
+<head>
+</head>
+        "#,
+        );
+        let expect = String::from(
+            r#"
+<head>
+<script type="text/javascript">const val=12;</script>
+<script type="text/javascript">const other=12;</script>
+</head>
+        "#,
+        );
+        assert_eq!(
+            trim(parse_content(
+                input.clone(),
+                vec![
+                    String::from("const val=12;"),
+                    String::from("const other=12;"),
+                ]
+            )),
+            trim(expect)
+        );
     }
 }

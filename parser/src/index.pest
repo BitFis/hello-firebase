@@ -1,5 +1,5 @@
 main = {
-  SOI ~ ( script | noscript | link | match_any )+ ~ EOI
+  SOI ~ ( head | script | noscript | link | match_any )+ ~ EOI
 }
 
 WS = _{ ( " " | "\n" )* }
@@ -27,6 +27,10 @@ noscript = {
 
 link = {
     "<link" ~ attributes ~ ">"
+}
+
+head = {
+    "<head"  ~ ( !">" ~ ANY )* ~ ">"
 }
 
 match_any = {

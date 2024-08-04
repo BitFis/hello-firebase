@@ -23,7 +23,11 @@ struct JsArgs {
 #[derive(clap::Args, Debug)]
 #[command(version, about, long_about = None)]
 struct IndexArgs {
+    /// html file to be processed
     file: String,
+    /// provide js script files to be injected into the html
+    #[arg(short = 'S', value_name = "script", value_hint = clap::ValueHint::DirPath)]
+    scripts: Vec<String>,
 }
 
 fn main() -> std::io::Result<()> {
@@ -33,7 +37,10 @@ fn main() -> std::io::Result<()> {
             println!("Parsed js file '{}'", args.file);
         }
         ParserCli::Index(args) => {
-            index_parser::parse(args.file.clone())?;
+            if args.scripts.len() > 0 {
+                println!("Inject scripts: {}", args.scripts.join(","));
+            }
+            index_parser::parse(args.file.clone(), args.scripts)?;
             println!("Parsed index file '{}'", args.file);
         }
     }
